@@ -1,0 +1,121 @@
+openapi: 3.0.1
+info:
+  title: Dropee API for SmartShopper Shopping Cart
+  version: 1.0.0
+servers:
+- url: https://api.dropee.io/
+
+
+paths:
+  /price:
+    get:
+      summary: Return price for given products
+      description:
+        App send geolocation and list of item ids, server return multiple prices for each item.
+        Prices consists of different merchant around the user's current location.
+      operationId: getPrice
+      parameters:
+      - name: lat
+        description: User's location (latitude)
+        in: query
+        required: true
+        schema:
+          type: number
+      - name: lng
+        description: User's location (longitude)
+        in: query
+        required: true
+        schema:
+          type: number
+      - name: items
+        in: query
+        description: Item_ids to query price
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        200:
+          description: Price list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItemPrice'
+  /checkout:
+    post:
+      operationId: checkout
+      summary: return URL to begins checkout flow.
+      description:
+        App send cart item and selected merchant, server prepares a session for payment, a checkout URL is returned.
+        App will launch URL in browser.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Checkout'
+        required: true
+      responses:
+        200:
+          description: 
+            if success is true, url will be returned.
+            if success is false, message will be the reason to show user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+
+components:
+  schemas:
+    ItemPrice:
+      type: object
+      properties:
+        item_id:
+          type: string
+        prices:
+          type: array
+          items:          
+            $ref: '#/components/schemas/ItemStorePrice'
+    ItemStorePrice:
+      type: object
+      properties:
+        store_id:
+          type: string
+        store_name:
+          type: string
+        price:
+          type: number
+        distance:
+          type: number
+        remarks:
+          type: string
+    Checkout:
+      type: object
+      properties:
+        store_id:
+          type: string
+        items:
+          type: array
+          items: 
+            type: string
+        user_id:
+          type: string
+    CheckoutResponse:
+      type: object
+      properties:
+        succcess:
+          type: boolean
+        message:
+          type: string
+        url:
+          type: string
+
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: x-api-key
+      in: header
